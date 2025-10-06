@@ -4,10 +4,10 @@ from datetime import datetime, timezone
 
 from app.services.scanner import check_ssl_certificate
 from app.services.headers_scanner import scan_security_headers
+from app.services.logger import save_scan_log
 
 router = APIRouter()
 
-# Input model
 class ScanRequest(BaseModel):
     url: HttpUrl
 
@@ -72,8 +72,8 @@ async def scan_website(request: ScanRequest):
     else:
         overall_risk = "Low"
 
-    # --- Final filtered response ---
-    return {
+    # --- Final structured result ---
+    result = {
         "url": url,
         "scan_timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "ssl": simplified_ssl,
@@ -81,3 +81,8 @@ async def scan_website(request: ScanRequest):
         "risk_level": overall_risk,
         "trusted_preload": header_info.get("trusted_preload", False),
     }
+
+    # Save log entry to file
+    save_scan_log(result)
+
+    return result
